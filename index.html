@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>War of Caos 3D - GLB inventados</title>
+  <style>
+    :root{
+      --bg:#07101d; --panel:#0f1b2c; --panel2:#12233a; --text:#eef4ff; --muted:#98a7c7; --accent:#56c2ff; --accent2:#9f66ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at top,#0d2040,#070e1b 60%);color:var(--text)}
+    .app{display:grid;grid-template-columns:340px 1fr 320px;min-height:100vh;gap:14px;padding:14px}
+    .panel{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid rgba(255,255,255,.08);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+    .sidebar{padding:18px;display:flex;flex-direction:column;gap:14px}
+    h1,h2,h3,p{margin:0}
+    .eyebrow{font-size:11px;letter-spacing:.24em;font-weight:800;color:#af8fff;text-transform:uppercase}
+    .title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stat{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .stat b{display:block;font-size:20px}
+    .stat small{color:var(--muted)}
+    .toolbar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    button,select{font:inherit;border:none;border-radius:14px;padding:12px 14px;cursor:pointer}
+    button{background:rgba(255,255,255,.05);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+    button.active, button.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .list{display:grid;gap:8px}
+    .item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04)}
+    .item small{display:block;color:var(--muted)}
+    .build-grid,.troop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .build-card,.troop-card{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .build-card.active,.troop-card.active{outline:2px solid var(--accent)}
+    .center{position:relative;overflow:hidden;display:flex;flex-direction:column}
+    #sceneWrap{position:relative;flex:1;min-height:72vh}
+    #hud{position:absolute;left:16px;top:16px;right:16px;display:flex;justify-content:space-between;gap:12px;pointer-events:none}
+    .hudbox{pointer-events:auto;padding:10px 14px;border-radius:16px;background:rgba(8,14,28,.8);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
+    #troopBar{position:absolute;left:16px;right:16px;bottom:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .slot{min-width:108px;padding:12px 14px;border-radius:18px;background:rgba(7,14,28,.88);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px);cursor:pointer}
+    .slot.active{outline:2px solid var(--accent)}
+    .slot.locked{opacity:.42;filter:grayscale(.45)}
+    .slot b{display:block}
+    .slot small{color:var(--muted)}
+    .notice{padding:12px 14px;border-radius:14px;background:rgba(86,194,255,.08);border:1px solid rgba(86,194,255,.18);color:#c7efff}
+    .selection-panel{position:absolute;right:18px;top:92px;width:300px;padding:16px;border-radius:20px;background:rgba(8,15,29,.94);backdrop-filter:blur(12px);border:1px solid rgba(86,194,255,.24);box-shadow:0 18px 50px rgba(0,0,0,.35);z-index:6}
+    .selection-panel.hidden{display:none}
+    .selection-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+    .selection-head button{padding:7px 10px;border-radius:10px}
+    .selection-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+    .selection-grid div{padding:10px;border-radius:12px;background:rgba(255,255,255,.04)}
+    .selection-grid small{display:block;color:var(--muted)}
+    .selection-grid b{font-size:16px}
+    .selection-actions{display:grid;gap:8px}
+    .selection-actions .primary{width:100%}
+    .selection-actions-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .selection-info{margin-top:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#d8e6ff}
+    .selection-info.hidden{display:none}
+    .selection-info small{display:block;color:var(--muted);margin-top:5px}
+    .specific-actions{display:grid;gap:8px;margin-top:8px}
+    .specific-actions .action-title{font-size:11px;letter-spacing:.16em;color:#9cb0d4;font-weight:800;text-transform:uppercase}
+    .specific-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .move-help{color:#8be6ff;font-weight:700}
+    .log{max-height:280px;overflow:auto;display:grid;gap:8px}
+    .log div{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);color:#dbe8ff}
+    .pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06)}
+    .battle-hud{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:7;display:grid;grid-template-columns:auto auto auto;gap:8px;pointer-events:none}
+    .battle-hud.hidden{display:none}
+    .battle-stat{min-width:100px;text-align:center;padding:9px 12px;border-radius:15px;background:rgba(7,14,28,.9);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+    .battle-stat small{display:block;color:var(--muted)}
+    .battle-stat b{font-size:18px}
+    .stars{letter-spacing:.12em;color:#ffd44e;text-shadow:0 2px 10px rgba(255,212,78,.25)}
+    .attack-controls{display:grid;gap:8px}
+    .attack-controls-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .attack-summary{padding:12px;border-radius:15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .attack-summary b{display:block;font-size:24px}
+    .attack-summary small{color:var(--muted)}
+    .unit-dead{opacity:.35;filter:grayscale(1)}
+    .finish-overlay{position:absolute;inset:0;z-index:10;display:grid;place-items:center;background:rgba(3,8,18,.7);backdrop-filter:blur(5px)}
+    .finish-overlay.hidden{display:none}
+    .finish-card{width:min(430px,90%);padding:26px;border-radius:24px;background:#101c31;border:1px solid rgba(255,255,255,.12);text-align:center;box-shadow:0 25px 80px rgba(0,0,0,.45)}
+    .finish-card h2{font-size:30px;margin:8px 0}.finish-card .big-stars{font-size:38px;letter-spacing:.12em;color:#ffd44e}
+    .finish-card p{color:#aab8d7;margin:10px 0 18px}
+    canvas{display:block;width:100%;height:100%}
+    @media (max-width:1200px){.app{grid-template-columns:1fr}.center{order:-1}#sceneWrap{min-height:58vh}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel sidebar">
+    <div class="title"><div><div class="eyebrow">FASE 4</div><h2>War of Caos 3D</h2></div><span class="pill">GLB inventados</span></div>
+    <div class="statgrid">
+      <div class="stat"><small>Ayuntamiento</small><b id="thLevel">1</b></div>
+      <div class="stat"><small>Nivel jugador</small><b id="playerLevel">1</b></div>
+      <div class="stat"><small>Oro</small><b id="gold">1200</b></div>
+      <div class="stat"><small>Elixir</small><b id="elixir">900</b></div>
+      <div class="stat"><small>Elixir oscuro</small><b id="dark">0</b></div>
+      <div class="stat"><small>Constructor</small><b id="builders">1/1</b></div>
+    </div>
+    <div class="toolbar">
+      <button id="buildModeBtn" class="primary active">Construir</button>
+      <button id="attackModeBtn">Atacar</button>
+    </div>
+    <div class="notice">Tropas 3D articuladas con caminar, atacar y morir. Bárbaro, Arquera, Gigante, Mago y Rey ya tienen siluetas y armas diferentes. También queda preparado el cargador GLB/GLTF para sustituirlos por modelos finales.</div>
+    <div>
+      <div class="eyebrow">Menú de construcción</div>
+      <div class="build-grid" id="buildGrid"></div>
+    </div>
+    <div>
+      <div class="eyebrow">Edificios colocados</div>
+      <div class="list" id="villageList"></div>
+    </div>
+  </aside>
+
+  <main class="panel center">
+    <div id="sceneWrap">
+      <div id="hud">
+        <div class="hudbox"><b id="modeLabel">Modo Construcción</b><br><small id="subLabel">Haz clic en el terreno para colocar edificios</small></div>
+        <div class="hudbox"><b id="selectedTroopText">Tropa 1: Bárbaro</b><br><small>En ataque: elige 1, 2, 3, 4 o 5 y haz clic en el borde</small></div>
+      </div>
+      <div id="battleHud" class="battle-hud hidden">
+        <div class="battle-stat"><small>Tiempo</small><b id="battleTimer">3:00</b></div>
+        <div class="battle-stat"><small>Destrucción</small><b id="battlePercent">0%</b></div>
+        <div class="battle-stat"><small>Estrellas</small><b id="battleStars" class="stars">☆☆☆</b></div>
+      </div>
+      <div id="finishOverlay" class="finish-overlay hidden">
+        <div class="finish-card">
+          <div class="eyebrow">RESULTADO DEL ATAQUE</div>
+          <div id="finishStars" class="big-stars">☆☆☆</div>
+          <h2 id="finishPercent">0% destruido</h2>
+          <p id="finishText">El ataque ha terminado.</p>
+          <button id="closeResultBtn" class="primary">Volver a preparar ataque</button>
+        </div>
+      </div>
+      <div id="selectionPanel" class="selection-panel hidden">
+        <div class="selection-head">
+          <div><div class="eyebrow">EDIFICIO SELECCIONADO</div><h3 id="selectedBuildingName">Ayuntamiento</h3></div>
+          <button id="closeSelectionBtn">✕</button>
+        </div>
+        <div class="selection-grid">
+          <div><small>Nivel</small><b id="selectedBuildingLevel">1 / 15</b></div>
+          <div><small>Vida</small><b id="selectedBuildingHp">100 / 100</b></div>
+          <div><small>Coste mejora</small><b id="selectedBuildingCost">240 🪙</b></div>
+          <div><small>Estado</small><b id="selectedBuildingState">Listo</b></div>
+        </div>
+        <div class="selection-actions">
+          <button id="upgradeSelectedBtn" class="primary">⬆ Mejorar</button>
+          <div class="selection-actions-row">
+            <button id="moveSelectedBtn">✥ Mover</button>
+            <button id="infoSelectedBtn">ⓘ Información</button>
+          </div>
+          <div id="buildingSpecificActions" class="specific-actions"></div>
+          <div id="buildingInfoBox" class="selection-info hidden"></div>
+        </div>
+      </div>
+      <div id="troopBar"></div>
+    </div>
+  </main>
+
+  <aside class="panel sidebar">
+    <div class="title"><div><div class="eyebrow">Ataque</div><h2>Control de tropas</h2></div><span class="pill" id="attackState">Preparando</span></div>
+    <div class="attack-controls">
+      <button id="startBattleBtn" class="primary">⚔ Iniciar ataque 3D</button>
+      <div class="attack-controls-row"><button id="pauseBattleBtn" disabled>⏸ Pausar</button><button id="resetBattleBtn">↻ Reiniciar enemigo</button></div>
+      <div class="attack-summary"><small>Objetivo</small><b id="attackObjective">0% · ☆☆☆</b><small>1★ al 50% · 1★ por Ayuntamiento · 3★ al 100%</small></div>
+    </div>
+    <div class="troop-grid" id="troopGrid"></div>
+    <div class="notice">Pulsa “Iniciar ataque 3D”. Selecciona la unidad 1–5. Bárbaro/Gigante/Rey atacan cuerpo a cuerpo; Arquera y Mago atacan a distancia con proyectiles visibles.</div>
+    <div>
+      <div class="eyebrow">Objetivos enemigos</div>
+      <div class="list" id="enemyList"></div>
+    </div>
+    <div>
+      <div class="eyebrow">Registro</div>
+      <div class="log" id="log"></div>
+    </div>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
+
+const sceneWrap = document.getElementById('sceneWrap');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+sceneWrap.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x7cbf55);
+scene.fog = new THREE.Fog(0x8ccf62, 18, 50);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+camera.position.set(14, 14, 14);
+camera.lookAt(0, 0, 0);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x355a1a, 1.15); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(8, 16, 10); sun.castShadow = true; scene.add(sun);
+sun.shadow.mapSize.set(2048,2048);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(28,28), new THREE.MeshStandardMaterial({color:0x85c35a}));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+const grid = new THREE.GridHelper(28, 20, 0x44683b, 0x6f9d5a); grid.position.y = 0.01; scene.add(grid);
+
+// decorative patches
+for(let i=0;i<40;i++){
+  const bush = new THREE.Mesh(new THREE.SphereGeometry(0.16+Math.random()*0.14,10,10), new THREE.MeshStandardMaterial({color: Math.random()>0.5?0x4f8d34:0x6baa41}));
+  bush.position.set((Math.random()-0.5)*26, 0.12, (Math.random()-0.5)*26);
+  bush.scale.y = 0.6; bush.castShadow = true; bush.receiveShadow = true; scene.add(bush);
+}
+
+const state = {
+  mode:'build',
+  player:{th:1, level:1, gold:1200, elixir:900, dark:0},
+  buildSelected:'townhall',
+  troopSelected:0,
+  village:[],
+  enemies:[],
+  units:[],
+  attackActive:false,
+  attackPaused:false,
+  battleStart:0,
+  battleDuration:180000,
+  initialEnemyCount:0,
+  initialEnemyHp:0,
+  projectiles:[],
+  troopProjectiles:[],
+  fx:[],
+  battleFinished:false,
+  selectedBuilding:null,
+  selectionHelper:null,
+  moveMode:false,
+  infoOpen:false,
+  armyCounts:[18,14,7,6,1],
+  troopLevels:[1,1,1,1,1],
+  training:null,
+  research:null,
+};
+
+const buildTypes = {
+  townhall:{label:'Ayuntamiento', costGold:0, costElixir:0, max:1, thReq:1, desc:'Edificio principal. Al mejorarlo desbloqueas nuevas construcciones, tropas y más capacidad.'},
+  goldmine:{label:'Mina de oro', costGold:150, costElixir:0, max:3, thReq:1, desc:'Produce oro con el tiempo. Selecciónala para recoger el oro almacenado.'},
+  elixir:{label:'Recolector', costGold:160, costElixir:0, max:3, thReq:1, desc:'Produce elixir con el tiempo. Selecciónalo para recoger el recurso acumulado.'},
+  wall:{label:'Muro', costGold:25, costElixir:0, max:40, thReq:1, desc:'Protege la aldea y obliga a las tropas terrestres a destruirlo o rodearlo.'},
+  cannon:{label:'Cañón', costGold:240, costElixir:0, max:2, thReq:1, desc:'Defensa terrestre. En la siguiente fase disparará automáticamente a las tropas enemigas.'},
+  barracks:{label:'Cuartel', costGold:300, costElixir:100, max:2, thReq:1, desc:'Entrena tropas. Las unidades nuevas se añaden a tu ejército cuando termina el entrenamiento.'},
+  archer:{label:'Torre arquera', costGold:380, costElixir:80, max:2, thReq:2, desc:'Defensa de mayor alcance. Se desbloquea con Ayuntamiento 2.'},
+  laboratory:{label:'Laboratorio', costGold:650, costElixir:450, max:1, thReq:3, desc:'Permite investigar mejoras permanentes para tus tropas.'},
+};
+const troops = [
+  {name:'Bárbaro', hp:38, damage:6, speed:0.028, color:0xf0b562, size:0.22, thReq:1, trainCost:60, trainSeconds:5, attackRange:.82, attackStyle:'melee'},
+  {name:'Arquera', hp:24, damage:7, speed:0.03, color:0xef6ec7, size:0.18, thReq:2, trainCost:80, trainSeconds:6, attackRange:3.8, attackStyle:'arrow'},
+  {name:'Gigante', hp:130, damage:15, speed:0.018, color:0xc69b70, size:0.34, thReq:3, trainCost:160, trainSeconds:10, attackRange:.95, attackStyle:'melee'},
+  {name:'Mago', hp:45, damage:16, speed:0.026, color:0x5b8cff, size:0.2, thReq:4, trainCost:220, trainSeconds:12, attackRange:4.2, attackStyle:'magic'},
+  {name:'Rey', hp:280, damage:26, speed:0.022, color:0xd4b445, size:0.3, thReq:5, trainCost:0, trainSeconds:0, attackRange:1.05, attackStyle:'melee'},
+];
+
+const ui = {
+  buildGrid: document.getElementById('buildGrid'),
+  troopGrid: document.getElementById('troopGrid'),
+  troopBar: document.getElementById('troopBar'),
+  villageList: document.getElementById('villageList'),
+  enemyList: document.getElementById('enemyList'),
+  log: document.getElementById('log'),
+  selectionPanel: document.getElementById('selectionPanel'),
+  selectedBuildingName: document.getElementById('selectedBuildingName'),
+  selectedBuildingLevel: document.getElementById('selectedBuildingLevel'),
+  selectedBuildingHp: document.getElementById('selectedBuildingHp'),
+  selectedBuildingCost: document.getElementById('selectedBuildingCost'),
+  selectedBuildingState: document.getElementById('selectedBuildingState'),
+  upgradeSelectedBtn: document.getElementById('upgradeSelectedBtn'),
+  closeSelectionBtn: document.getElementById('closeSelectionBtn'),
+  moveSelectedBtn: document.getElementById('moveSelectedBtn'),
+  infoSelectedBtn: document.getElementById('infoSelectedBtn'),
+  buildingSpecificActions: document.getElementById('buildingSpecificActions'),
+  buildingInfoBox: document.getElementById('buildingInfoBox'),
+  battleHud: document.getElementById('battleHud'),
+  battleTimer: document.getElementById('battleTimer'),
+  battlePercent: document.getElementById('battlePercent'),
+  battleStars: document.getElementById('battleStars'),
+  startBattleBtn: document.getElementById('startBattleBtn'),
+  pauseBattleBtn: document.getElementById('pauseBattleBtn'),
+  resetBattleBtn: document.getElementById('resetBattleBtn'),
+  attackObjective: document.getElementById('attackObjective'),
+  finishOverlay: document.getElementById('finishOverlay'),
+  finishStars: document.getElementById('finishStars'),
+  finishPercent: document.getElementById('finishPercent'),
+  finishText: document.getElementById('finishText'),
+  closeResultBtn: document.getElementById('closeResultBtn'),
+};
+function log(msg){ const d=document.createElement('div'); d.textContent=msg; ui.log.prepend(d); while(ui.log.children.length>28) ui.log.lastChild.remove(); }
+
+function updateStats(){
+  thLevel.textContent=state.player.th;
+  playerLevel.textContent=state.player.level;
+  gold.textContent=Math.floor(state.player.gold);
+  elixir.textContent=Math.floor(state.player.elixir);
+  dark.textContent=Math.floor(state.player.dark);
+  builders.textContent='1/1';
+}
+updateStats();
+
+function renderBuildUI(){
+  ui.buildGrid.innerHTML = Object.entries(buildTypes).map(([key, def])=>{
+    const count = state.village.filter(v=>v.type===key).length;
+    const disabled = state.player.th < def.thReq || count >= def.max;
+    return `<button class="build-card ${state.buildSelected===key?'active':''}" data-build="${key}" ${disabled?'disabled':''}><b>${def.label}</b><small>TH ${def.thReq} · ${def.costGold}🪙 ${def.costElixir?`· ${def.costElixir}🧪`:''}</small></button>`;
+  }).join('');
+  ui.buildGrid.querySelectorAll('[data-build]').forEach(btn=>btn.onclick=()=>{ state.buildSelected=btn.dataset.build; renderBuildUI(); });
+}
+function renderTroopUI(){
+  const html = troops.map((t,i)=>{
+    const locked = false; // Fase 2: todas las tropas disponibles para probar el combate 3D.
+    const count = state.armyCounts[i] || 0;
+    return `<button class="troop-card ${state.troopSelected===i?'active':''}" data-troop="${i}" ${locked?'disabled':''}><b>${i+1}. ${t.name} · x${count}</b><small>${locked?`Se desbloquea en TH ${t.thReq}`:`Nv ${state.troopLevels[i]} · Daño ${t.damage} · Vida ${t.hp}`}</small></button>`;
+  }).join('');
+  ui.troopGrid.innerHTML = html;
+  ui.troopBar.innerHTML = troops.map((t,i)=>{
+    const locked = false; const count = state.armyCounts[i] || 0;
+    return `<div class="slot ${state.troopSelected===i?'active':''} ${locked?'locked':''}" data-bar="${i}"><b>${i+1}. ${t.name} · x${count}</b><small>${locked?`TH ${t.thReq}`:'Elegir y desplegar'}</small></div>`;
+  }).join('');
+  [...ui.troopGrid.querySelectorAll('[data-troop]'), ...ui.troopBar.querySelectorAll('[data-bar]')].forEach(btn=>btn.onclick=()=>{
+    const i = +(btn.dataset.troop ?? btn.dataset.bar);
+    if(state.player.th < troops[i].thReq){ log(`Necesitas Ayuntamiento ${troops[i].thReq} para desbloquear ${troops[i].name}.`); return; }
+    state.troopSelected = i; renderTroopUI(); selectedTroopText.textContent = `Tropa ${i+1}: ${troops[i].name} · x${state.armyCounts[i]||0}`;
+  });
+}
+renderBuildUI(); renderTroopUI();
+
+
+const gltfLoader = new GLTFLoader();
+const MODEL_PATHS = {
+  barbarian:'./assets/models/barbarian.glb',
+  archer:'./assets/models/archer.glb',
+  giant:'./assets/models/giant.glb',
+  wizard:'./assets/models/wizard.glb',
+  king:'./assets/models/king.glb',
+  townhall:'./assets/models/townhall.glb',
+  cannon:'./assets/models/cannon.glb',
+  archerTower:'./assets/models/archer_tower.glb',
+  wall:'./assets/models/wall.glb',
+  goldmine:'./assets/models/goldmine.glb',
+  elixir:'./assets/models/elixir.glb',
+  barracks:'./assets/models/barracks.glb',
+  laboratory:'./assets/models/laboratory.glb'
+};
+// Por defecto usamos los modelos procedurales incluidos. Al poner GLB finales en
+// assets/models puedes activar este interruptor sin reescribir el combate.
+const USE_EXTERNAL_GLB = true;
+const glbCache = new Map();
+const MODEL_SCALES = {barbarian:.88, archer:.88, giant:.80, wizard:.88, king:.88, townhall:1.0, goldmine:1.0, elixir:1.0, cannon:1.0, archerTower:1.0, wall:1.0, barracks:1.0, laboratory:1.0};
+
+async function loadOptionalGLB(key){
+  if(!USE_EXTERNAL_GLB || !MODEL_PATHS[key]) return null;
+  if(glbCache.has(key)) return glbCache.get(key);
+  try{
+    const gltf = await gltfLoader.loadAsync(MODEL_PATHS[key]);
+    glbCache.set(key, gltf);
+    return gltf;
+  }catch(err){
+    console.warn(`Modelo GLB no disponible: ${key}`, err);
+    return null;
+  }
+}
+function cloneLoadedModel(key){
+  const gltf = glbCache.get(key);
+  if(!gltf?.scene) return null;
+  const clone = gltf.scene.clone(true);
+  clone.traverse(obj=>{ if(obj.isMesh){ obj.castShadow = true; obj.receiveShadow = true; } });
+  clone.scale.setScalar(MODEL_SCALES[key] || 1);
+  return clone;
+}
+async function preloadAllGLBModels(){
+  if(!USE_EXTERNAL_GLB) return;
+  await Promise.all(Object.keys(MODEL_PATHS).map(key=>loadOptionalGLB(key)));
+}
+function mat(color, rough=.72, metal=.05){
+  return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+}
+function part(geo, material, x=0,y=0,z=0){
+  const m=new THREE.Mesh(geo,material); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function createHumanoidRig(scale=1, shirt=0x995522, armor=0x555555){
+  const root=new THREE.Group(), hip=new THREE.Group(), torso=new THREE.Group();
+  root.add(hip); hip.add(torso);
+  torso.position.y=.42*scale;
+  const skin=mat(0xf0c7a2), cloth=mat(shirt), metal=mat(armor,.38,.42), dark=mat(0x302820);
+  const body=part(new THREE.BoxGeometry(.34*scale,.48*scale,.22*scale),cloth,0,.24*scale,0); torso.add(body);
+  const head=part(new THREE.SphereGeometry(.15*scale,14,12),skin,0,.64*scale,0); torso.add(head);
+  const hair=part(new THREE.SphereGeometry(.16*scale,12,8,0,Math.PI*2,0,Math.PI/2),dark,0,.70*scale,0); torso.add(hair);
+  const leftArm=new THREE.Group(), rightArm=new THREE.Group(), leftLeg=new THREE.Group(), rightLeg=new THREE.Group();
+  leftArm.position.set(-.24*scale,.48*scale,0); rightArm.position.set(.24*scale,.48*scale,0);
+  leftLeg.position.set(-.10*scale,.02*scale,0); rightLeg.position.set(.10*scale,.02*scale,0);
+  torso.add(leftArm,rightArm); hip.add(leftLeg,rightLeg);
+  leftArm.add(part(new THREE.CapsuleGeometry(.055*scale,.24*scale,4,8),skin,0,-.15*scale,0));
+  rightArm.add(part(new THREE.CapsuleGeometry(.055*scale,.24*scale,4,8),skin,0,-.15*scale,0));
+  leftLeg.add(part(new THREE.CapsuleGeometry(.065*scale,.28*scale,4,8),dark,0,-.18*scale,0));
+  rightLeg.add(part(new THREE.CapsuleGeometry(.065*scale,.28*scale,4,8),dark,0,-.18*scale,0));
+  root.userData.rig={hip,torso,leftArm,rightArm,leftLeg,rightLeg,head,body,metal};
+  return root;
+}
+function addSword(rig, scale=.22, royal=false){
+  const g=new THREE.Group();
+  const blade=part(new THREE.BoxGeometry(.045*scale,.72*scale,.035*scale),mat(royal?0xd9e6ff:0xd5d8df,.22,.75),0,-.34*scale,0);
+  const guard=part(new THREE.BoxGeometry(.26*scale,.045*scale,.055*scale),mat(royal?0xe3b83d:0x765129,.38,.38),0,.02*scale,0);
+  const handle=part(new THREE.CylinderGeometry(.035*scale,.035*scale,.20*scale,8),mat(0x4b2f20),0,.13*scale,0);
+  g.add(blade,guard,handle); g.position.set(0,-.15*scale,-.04*scale); g.rotation.z=Math.PI*.08;
+  rig.rightArm.add(g); rig.userData.weapon=g;
+}
+function addBow(rig, scale=.28){
+  const bow=new THREE.Group();
+  const curve=new THREE.Mesh(new THREE.TorusGeometry(.28*scale,.025*scale,6,18,Math.PI*1.45),mat(0x8b542d));
+  curve.rotation.y=Math.PI/2; curve.rotation.z=-Math.PI*.72; bow.add(curve);
+  const string=part(new THREE.BoxGeometry(.012*scale,.54*scale,.012*scale),mat(0xeee7d0),0,0,0); bow.add(string);
+  bow.position.set(0,-.17*scale,-.04*scale); rig.leftArm.add(bow); rig.userData.weapon=bow;
+}
+function addStaff(rig, scale=.30){
+  const g=new THREE.Group();
+  const stick=part(new THREE.CylinderGeometry(.025*scale,.035*scale,.9*scale,8),mat(0x5b3b28),0,-.32*scale,0);
+  const orb=part(new THREE.SphereGeometry(.10*scale,12,12),new THREE.MeshStandardMaterial({color:0x62b9ff,emissive:0x214eaa,emissiveIntensity:1.2}),0,.15*scale,0);
+  g.add(stick,orb); g.position.set(0,-.10*scale,-.03*scale); rig.rightArm.add(g); rig.userData.weapon=g;
+}
+function makeTroopModel(troopIndex){
+  const key=['barbarian','archer','giant','wizard','king'][troopIndex];
+  const loaded = cloneLoadedModel(key);
+  if(loaded){
+    loaded.userData.anim={phase:Math.random()*Math.PI*2,state:'idle',attackPulse:0,death:0};
+    return loaded;
+  }
+  const t=troops[troopIndex];
+  let rig;
+  if(troopIndex===0){
+    rig=createHumanoidRig(1.0,0xb15a32,0x666666); addSword(rig,.9,false);
+    const helmet=part(new THREE.ConeGeometry(.18,.16,10),mat(0x8a5a2c),0,.80,0); rig.userData.rig.torso.add(helmet);
+  }else if(troopIndex===1){
+    rig=createHumanoidRig(.88,0x9a4d86,0x5d4037); addBow(rig,1.0);
+    const hood=part(new THREE.ConeGeometry(.18,.24,10),mat(0xd45a9c),0,.70,-.01); rig.userData.rig.torso.add(hood);
+  }else if(troopIndex===2){
+    rig=createHumanoidRig(1.55,0x7b4c35,0x5f544d);
+    const belt=part(new THREE.BoxGeometry(.62,.12,.40),mat(0x4a3224),0,.40,0); rig.userData.rig.torso.add(belt);
+  }else if(troopIndex===3){
+    rig=createHumanoidRig(.96,0x3854a8,0x7364c8); addStaff(rig,1.1);
+    const hood=part(new THREE.ConeGeometry(.22,.36,12),mat(0x526bd4),0,.80,0); rig.userData.rig.torso.add(hood);
+  }else{
+    rig=createHumanoidRig(1.30,0x8f2438,0x916f2e); addSword(rig,1.2,true);
+    const crown=new THREE.Group();
+    for(let i=-2;i<=2;i++) crown.add(part(new THREE.ConeGeometry(.035,.16,6),mat(0xe0b633,.3,.55),i*.065,.07,0));
+    crown.position.set(0,.78,0); rig.userData.rig.torso.add(crown);
+    const cape=part(new THREE.BoxGeometry(.38,.48,.04),mat(0x7e1830),0,.40,.14); rig.userData.rig.torso.add(cape);
+  }
+  rig.scale.setScalar(.75);
+  rig.userData.anim={phase:Math.random()*Math.PI*2,state:'idle',attackPulse:0,death:0};
+  return rig;
+}
+
+function animateTroopVisual(unit, dt, time){
+  const root=unit.mesh, rig=root.userData.rig, anim=root.userData.anim || (root.userData.anim={phase:Math.random()*Math.PI*2,state:'idle',attackPulse:0,death:0});
+  anim.state = !unit.alive ? 'dead' : (unit.attackAnimating ? 'attack' : (unit.moving ? 'walk':'idle'));
+  if(!rig){
+    if(anim.state==='walk'){
+      root.position.y = .05 + Math.abs(Math.sin(time*10+anim.phase))*.05;
+      root.rotation.z = Math.sin(time*8+anim.phase)*.05;
+      root.scale.setScalar((unit.troopIndex===2?.80:.88) * (1+Math.sin(time*10+anim.phase)*.015));
+    }else if(anim.state==='attack'){
+      anim.attackPulse=Math.min(1,anim.attackPulse+dt*5.2);
+      const swing=Math.sin(anim.attackPulse*Math.PI);
+      root.position.y = .05 + swing*.04;
+      root.rotation.x = -.25*swing;
+      if(anim.attackPulse>=1){ anim.attackPulse=0; unit.attackAnimating=false; }
+    }else if(anim.state==='dead'){
+      anim.death=Math.min(1,anim.death+dt*2.4);
+      root.rotation.z=-Math.PI*.48*anim.death;
+      root.position.y=Math.max(.02,root.position.y-dt*.15);
+    }else{
+      root.position.y = .05 + Math.sin(time*2+anim.phase)*.015;
+      root.rotation.z *= .84;
+      root.rotation.x *= .84;
+    }
+    return;
+  }
+  if(anim.state==='walk'){
+    const s=Math.sin(time*10+anim.phase);
+    rig.leftLeg.rotation.x=s*.7; rig.rightLeg.rotation.x=-s*.7;
+    rig.leftArm.rotation.x=-s*.52; rig.rightArm.rotation.x=s*.52;
+    rig.hip.position.y=Math.abs(Math.sin(time*10+anim.phase))*.035;
+    rig.torso.rotation.z=Math.sin(time*5+anim.phase)*.035;
+  }else if(anim.state==='attack'){
+    anim.attackPulse=Math.min(1,anim.attackPulse+dt*5.2);
+    const swing=Math.sin(anim.attackPulse*Math.PI);
+    rig.rightArm.rotation.x=-1.25*swing;
+    rig.rightArm.rotation.z=-.55*swing;
+    rig.leftArm.rotation.x=.25*swing;
+    rig.torso.rotation.y=-.18*swing;
+    if(anim.attackPulse>=1){ anim.attackPulse=0; unit.attackAnimating=false; }
+  }else if(anim.state==='dead'){
+    anim.death=Math.min(1,anim.death+dt*2.4);
+    root.rotation.z=-Math.PI*.48*anim.death;
+    root.position.y=Math.max(.03,root.position.y-dt*.15);
+  }else{
+    rig.leftLeg.rotation.x*=.82; rig.rightLeg.rotation.x*=.82;
+    rig.leftArm.rotation.x*=.82; rig.rightArm.rotation.x*=.82;
+    rig.torso.rotation.y*=.82; rig.torso.rotation.z=Math.sin(time*2+anim.phase)*.018;
+    rig.hip.position.y=Math.sin(time*3+anim.phase)*.012;
+  }
+}
+
+function spawnTroopProjectile(unit,target,style){
+  if(!target || target.hp<=0) return;
+  let geo, material, speed=.17;
+  if(style==='arrow'){
+    geo=new THREE.CylinderGeometry(.018,.018,.38,6);
+    material=mat(0x6f472a,.7,.05);
+  }else{
+    geo=new THREE.SphereGeometry(.10,10,10);
+    material=new THREE.MeshStandardMaterial({color:0x5aa9ff,emissive:0x2569ff,emissiveIntensity:2});
+    speed=.13;
+  }
+  const mesh=new THREE.Mesh(geo,material); mesh.castShadow=true;
+  mesh.position.copy(unit.mesh.position); mesh.position.y+=.85;
+  if(style==='arrow') mesh.rotation.x=Math.PI/2;
+  scene.add(mesh);
+  state.troopProjectiles.push({mesh,target,damage:unit.damage,speed,style});
+}
+function spawnDebris(building){
+  for(let i=0;i<7;i++){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(.08+.08*Math.random(),.08+.08*Math.random(),.08+.08*Math.random()),mat(0x70513b));
+    mesh.position.set(building.x+(Math.random()-.5)*.7,.45+Math.random()*.5,building.z+(Math.random()-.5)*.7);
+    scene.add(mesh);
+    state.fx.push({mesh,vel:new THREE.Vector3((Math.random()-.5)*.035,.035+Math.random()*.035,(Math.random()-.5)*.035),life:1.2});
+  }
+}
+function damageBuilding(building, amount){
+  if(!building || building.hp<=0) return;
+  building.hp=Math.max(0,building.hp-amount); updateHpBar(building.bar,building.hp);
+  building.mesh.scale.setScalar(building.hp<=0?.82:1);
+  if(building.hp<=0){
+    spawnDebris(building);
+    building.mesh.traverse(o=>{
+      if(o.isMesh && o.material?.color){
+        o.material=o.material.clone();
+        o.material.color.multiplyScalar(.30);
+      }
+    });
+    state.player.gold+=40; state.player.elixir+=30; updateStats(); refreshLists(); updateBattleHud();
+    log(`${buildTypes[building.type]?.label || building.type} destruido.`);
+  }
+}
+
+function makeWallVisual(level=1){
+  const group = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1,0.5,0.35), new THREE.MeshStandardMaterial({color: level<5?0x9e6e49: level<10?0xb75fd1:0xd69c38}));
+  base.position.y=0.25; base.castShadow=true; base.receiveShadow=true; group.add(base); return group;
+}
+function makeBuilding(type, level=1){
+  const modelKey = ({townhall:'townhall', goldmine:'goldmine', elixir:'elixir', cannon:'cannon', archer:'archerTower', wall:'wall', barracks:'barracks', laboratory:'laboratory'})[type];
+  const loaded = modelKey ? cloneLoadedModel(modelKey) : null;
+  if(loaded){
+    const levelScale = type==='wall' ? 1 : (1 + Math.min(level-1,14)*0.02);
+    loaded.scale.multiplyScalar(levelScale);
+    return loaded;
+  }
+  const group = new THREE.Group();
+  const colors = {townhall:0xc58d46,goldmine:0x8e5d32,elixir:0xb95ce5,cannon:0x666666,archer:0x78b86c};
+  if(type==='wall') return makeWallVisual(level);
+  const footprint = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.12,1.2), new THREE.MeshStandardMaterial({color:0xa18565}));
+  footprint.position.y = 0.06; footprint.receiveShadow=true; group.add(footprint);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.92,0.5+level*0.03,0.92), new THREE.MeshStandardMaterial({color:colors[type]||0x888888}));
+  body.position.y = 0.3+level*0.015; body.castShadow=true; body.receiveShadow=true; group.add(body);
+  if(type==='townhall'){
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.72, 0.5+level*0.03, 4), new THREE.MeshStandardMaterial({color: level<5?0xea9d42: level<10?0xc45e56:0x6d6fe7}));
+    roof.rotation.y = Math.PI/4; roof.position.y = 0.82 + level*0.02; roof.castShadow=true; group.add(roof);
+  }
+  if(type==='goldmine'){
+    const pile = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.32,0.28,12), new THREE.MeshStandardMaterial({color:0xf0ca40}));
+    pile.position.set(0.3,0.28,-0.2); pile.castShadow=true; group.add(pile);
+  }
+  if(type==='elixir'){
+    const tank = new THREE.Mesh(new THREE.SphereGeometry(0.22,16,16), new THREE.MeshStandardMaterial({color:0xea7fff, transparent:true, opacity:.9}));
+    tank.position.set(0.25,0.36,-0.2); tank.castShadow=true; group.add(tank);
+  }
+  if(type==='cannon'){
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.72,12), new THREE.MeshStandardMaterial({color:0x333333}));
+    barrel.rotation.z = Math.PI/2; barrel.position.set(0,0.62,0); barrel.castShadow=true; group.add(barrel);
+  }
+  if(type==='archer'){
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.32,0.95,8), new THREE.MeshStandardMaterial({color:0xbeb3a0}));
+    tower.position.y = 0.6; tower.castShadow=true; group.add(tower);
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.32,0.35,8), new THREE.MeshStandardMaterial({color:0x75553b}));
+    top.position.y = 1.25; top.castShadow=true; group.add(top);
+  }
+  if(type==='barracks'){
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.62,0.38,4), new THREE.MeshStandardMaterial({color:0xb84c42}));
+    roof.rotation.y=Math.PI/4; roof.position.y=.85; roof.castShadow=true; group.add(roof);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(.08,.55,.08),new THREE.MeshStandardMaterial({color:0x333333})); flag.position.set(.36,1.12,.18); group.add(flag);
+  }
+  if(type==='laboratory'){
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(.45,18,12,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x74c8ff,metalness:.25,roughness:.25})); dome.position.y=.78; dome.castShadow=true; group.add(dome);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.48,.06,10,24),new THREE.MeshStandardMaterial({color:0x8f65ff})); ring.rotation.x=Math.PI/2; ring.position.y=.73; group.add(ring);
+  }
+  return group;
+}
+
+function hpBar(max, value, color=0x66ff88){
+  const group = new THREE.Group();
+  const bg = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.06,0.06), new THREE.MeshBasicMaterial({color:0x321818}));
+  const fg = new THREE.Mesh(new THREE.BoxGeometry(0.86,0.04,0.04), new THREE.MeshBasicMaterial({color}));
+  fg.position.x = -0.43 + (value/max)*0.43;
+  fg.scale.x = Math.max(0.02, value/max);
+  group.add(bg, fg);
+  group.userData = {max, fg};
+  return group;
+}
+function updateHpBar(bar, value){
+  const pct = Math.max(0.02, value / bar.userData.max);
+  bar.userData.fg.scale.x = pct;
+  bar.userData.fg.position.x = -0.43 + pct*0.43;
+}
+
+function addVillageBuilding(type, x, z, level=1, enemy=false){
+  const mesh = makeBuilding(type, level);
+  mesh.position.set(x,0,z);
+  scene.add(mesh);
+  const maxHp = type==='wall'?60+level*18: type==='townhall'?260+level*55: 80+level*35;
+  const bar = hpBar(maxHp,maxHp, enemy?0x59f46d:0x70dbff);
+  bar.position.set(0, type==='wall'?0.9:1.55, 0); mesh.add(bar);
+  const entry = {type, x, z, level, mesh, enemy, hp:maxHp, maxHp, bar,
+    stored:0, lastTick:Date.now(), capacity: type==='goldmine'||type==='elixir' ? 250*level : 0};
+  mesh.userData.buildingEntry = entry;
+  mesh.traverse(obj=>obj.userData.buildingEntry = entry);
+  (enemy?state.enemies:state.village).push(entry);
+  refreshLists();
+  return entry;
+}
+
+function seedWorld(){
+  // seed village
+  addVillageBuilding('townhall', -4, -1, 1, false);
+  addVillageBuilding('goldmine', -1.5, -2.6, 1, false);
+  addVillageBuilding('elixir', -1.6, 1.6, 1, false);
+  addVillageBuilding('cannon', -6.1, 1.6, 1, false);
+  addVillageBuilding('barracks', -5.9, -2.6, 1, false);
+  [-4.8,-4,-3.2,-2.4].forEach((x,i)=>addVillageBuilding('wall', x, 2.9, 1, false));
+
+  // enemy village
+  addVillageBuilding('townhall', 4.3, -0.6, 2, true);
+  addVillageBuilding('goldmine', 6.5, 1.9, 2, true);
+  addVillageBuilding('elixir', 3.0, 2.2, 2, true);
+  addVillageBuilding('cannon', 2.0, -2.3, 2, true);
+  addVillageBuilding('archer', 6.5, -2.2, 2, true);
+  [2.6,3.4,4.2,5.0,5.8].forEach((x)=>addVillageBuilding('wall', x, 3.3, 2, true));
+  [2.6,3.4,4.2,5.0,5.8].forEach((x)=>addVillageBuilding('wall', x, -3.3, 2, true));
+  state.initialEnemyCount=state.enemies.length;
+  state.initialEnemyHp=state.enemies.reduce((s,e)=>s+e.maxHp,0);
+}
+
+
+function refreshLists(){
+  ui.villageList.innerHTML = state.village.map((b)=>`<div class="item"><span><b>${buildTypes[b.type]?.label || b.type}</b><small>Nv ${b.level} · HP ${Math.max(0,Math.ceil(b.hp))}/${b.maxHp}</small></span><span>Selecciona en 3D</span></div>`).join('');
+  ui.enemyList.innerHTML = state.enemies.filter(e=>e.hp>0).map((b)=>`<div class="item"><span><b>${b.type}</b><small>Nv ${b.level} · HP ${Math.max(0,Math.ceil(b.hp))}/${b.maxHp}</small></span><span>${b.x.toFixed(1)}, ${b.z.toFixed(1)}</span></div>`).join('');
+  if(state.selectedBuilding) updateSelectionPanel();
+}
+function upgradeCostFor(b){ return 120 * (b.level+1); }
+function clearBuildingSelection(){
+  state.selectedBuilding = null; state.moveMode=false; state.infoOpen=false;
+  if(state.selectionHelper){ scene.remove(state.selectionHelper); state.selectionHelper = null; }
+  ui.selectionPanel.classList.add('hidden');
+}
+function selectBuilding(entry){
+  if(!entry || entry.enemy){ return; }
+  state.selectedBuilding = entry; state.moveMode=false; state.infoOpen=false;
+  if(state.selectionHelper) scene.remove(state.selectionHelper);
+  state.selectionHelper = new THREE.BoxHelper(entry.mesh, 0x35d6ff);
+  state.selectionHelper.material.depthTest = false;
+  state.selectionHelper.renderOrder = 999;
+  scene.add(state.selectionHelper);
+  updateSelectionPanel();
+  ui.selectionPanel.classList.remove('hidden');
+  log(`${buildTypes[entry.type]?.label || entry.type} seleccionado. Usa “Mejorar” en el panel flotante.`);
+}
+function updateSelectionPanel(){
+  const b = state.selectedBuilding; if(!b) return;
+  const def = buildTypes[b.type] || {label:b.type,desc:''};
+  const label = def.label;
+  const cost = upgradeCostFor(b);
+  ui.selectedBuildingName.textContent = label;
+  ui.selectedBuildingLevel.textContent = `${b.level} / 15`;
+  ui.selectedBuildingHp.textContent = `${Math.max(0,Math.ceil(b.hp))} / ${b.maxHp}`;
+  ui.selectedBuildingCost.textContent = b.level>=15 ? 'MAX' : `${cost} 🪙`;
+  ui.selectedBuildingState.textContent = state.moveMode ? 'Elige nueva posición' : (b.level>=15 ? 'Nivel máximo' : 'Listo');
+  ui.upgradeSelectedBtn.disabled = b.level>=15 || state.moveMode;
+  ui.upgradeSelectedBtn.textContent = b.level>=15 ? '✓ Nivel máximo' : `⬆ Mejorar a Nv ${b.level+1}`;
+  ui.moveSelectedBtn.textContent = state.moveMode ? '✕ Cancelar mover' : '✥ Mover';
+  ui.buildingInfoBox.classList.toggle('hidden', !state.infoOpen);
+  ui.buildingInfoBox.innerHTML = `<b>${label}</b><small>${def.desc||'Edificio de tu aldea.'}</small><small>Posición: ${b.x.toFixed(1)}, ${b.z.toFixed(1)} · Nivel máximo: 15</small>`;
+
+  let actions = '';
+  if(b.type==='goldmine') actions = `<div class="action-title">Producción</div><button id="collectGoldBtn">🪙 Recoger oro (${Math.floor(b.stored||0)})</button>`;
+  if(b.type==='elixir') actions = `<div class="action-title">Producción</div><button id="collectElixirBtn">🧪 Recoger elixir (${Math.floor(b.stored||0)})</button>`;
+  if(b.type==='barracks'){
+    const trainable = troops.map((t,i)=>({t,i})).filter(x=>state.player.th>=x.t.thReq && x.i<4);
+    actions = `<div class="action-title">Entrenar tropas</div><div class="specific-actions-grid">${trainable.map(({t,i})=>`<button class="train-btn" data-train="${i}">${t.name}<br><small>${t.trainCost} 🧪 · ${t.trainSeconds}s</small></button>`).join('')}</div>${state.training?`<div class="notice">Entrenando ${troops[state.training.troop].name}: <b id="trainingCountdown">...</b></div>`:''}`;
+  }
+  if(b.type==='laboratory'){
+    const researchable = troops.map((t,i)=>({t,i})).filter(x=>state.player.th>=x.t.thReq && x.i<4);
+    actions = `<div class="action-title">Investigación</div><div class="specific-actions-grid">${researchable.map(({t,i})=>`<button class="research-btn" data-research="${i}">${t.name} Nv ${state.troopLevels[i]}<br><small>${180*state.troopLevels[i]} 🧪</small></button>`).join('')}</div>${state.research?`<div class="notice">Investigando ${troops[state.research.troop].name}: <b id="researchCountdown">...</b></div>`:''}`;
+  }
+  ui.buildingSpecificActions.innerHTML = actions;
+  document.getElementById('collectGoldBtn')?.addEventListener('click',()=>collectResource(b,'gold'));
+  document.getElementById('collectElixirBtn')?.addEventListener('click',()=>collectResource(b,'elixir'));
+  ui.buildingSpecificActions.querySelectorAll('.train-btn').forEach(btn=>btn.onclick=()=>startTraining(+btn.dataset.train));
+  ui.buildingSpecificActions.querySelectorAll('.research-btn').forEach(btn=>btn.onclick=()=>startResearch(+btn.dataset.research));
+}
+function upgradeSelectedBuilding(){
+  const b = state.selectedBuilding; if(!b || b.enemy) return;
+  if(b.level>=15) return log('Este edificio ya está al nivel máximo 15.');
+  const cost = upgradeCostFor(b);
+  if(state.player.gold < cost) return log('No tienes oro suficiente para mejorar.');
+  state.player.gold -= cost;
+  const arr = state.village;
+  const index = arr.indexOf(b);
+  const newLevel = b.level + 1;
+  const pos = {x:b.x,z:b.z};
+  scene.remove(b.mesh);
+  if(state.selectionHelper){ scene.remove(state.selectionHelper); state.selectionHelper=null; }
+  if(index>=0) arr.splice(index,1);
+  const upgraded = addVillageBuilding(b.type,pos.x,pos.z,newLevel,false);
+  if(b.type==='townhall'){
+    state.player.th = Math.min(15, newLevel);
+    state.player.level = Math.max(state.player.level, newLevel);
+    // Primera unidad de cada desbloqueo para poder probarla al subir TH.
+    troops.forEach((tr,i)=>{ if(tr.thReq===newLevel && i<4 && (state.armyCounts[i]||0)===0) state.armyCounts[i]=1; });
+  }
+  state.selectedBuilding = upgraded;
+  state.selectionHelper = new THREE.BoxHelper(upgraded.mesh, 0x35d6ff);
+  state.selectionHelper.material.depthTest = false;
+  state.selectionHelper.renderOrder = 999;
+  scene.add(state.selectionHelper);
+  updateStats(); renderBuildUI(); renderTroopUI(); updateSelectionPanel();
+  log(`${buildTypes[b.type]?.label || b.type} mejorado a nivel ${newLevel}.`);
+}
+ui.upgradeSelectedBtn.onclick = upgradeSelectedBuilding;
+ui.closeSelectionBtn.onclick = clearBuildingSelection;
+ui.infoSelectedBtn.onclick = ()=>{ state.infoOpen=!state.infoOpen; updateSelectionPanel(); };
+ui.moveSelectedBtn.onclick = ()=>{
+  if(!state.selectedBuilding) return;
+  state.moveMode = !state.moveMode;
+  if(state.moveMode){
+    modeLabel.textContent='Mover edificio';
+    subLabel.innerHTML='<span class="move-help">Haz clic en una casilla libre para recolocarlo</span>';
+    log(`Moviendo ${buildTypes[state.selectedBuilding.type]?.label || state.selectedBuilding.type}. Elige nueva posición.`);
+  } else {
+    modeLabel.textContent='Modo Construcción'; subLabel.textContent='Haz clic en el terreno para colocar edificios';
+  }
+  updateSelectionPanel();
+};
+refreshLists();
+
+function collectResource(b, kind){
+  if(!b || b.type!==(kind==='gold'?'goldmine':'elixir')) return;
+  const amount=Math.floor(b.stored||0);
+  if(amount<=0){ log('Todavía no hay recurso suficiente para recoger.'); return; }
+  state.player[kind]+=amount; b.stored=0; updateStats(); updateSelectionPanel();
+  log(`${amount} ${kind==='gold'?'de oro':'de elixir'} recogido.`);
+}
+function startTraining(i){
+  const t=troops[i];
+  if(state.training){ log('El cuartel ya está entrenando una unidad.'); return; }
+  if(state.player.th<t.thReq){ log(`Necesitas Ayuntamiento ${t.thReq}.`); return; }
+  if(state.player.elixir<t.trainCost){ log('No tienes elixir suficiente.'); return; }
+  state.player.elixir-=t.trainCost; updateStats();
+  state.training={troop:i,end:Date.now()+t.trainSeconds*1000}; updateSelectionPanel();
+  log(`Entrenamiento iniciado: ${t.name}.`);
+}
+function startResearch(i){
+  if(state.research){ log('El laboratorio ya está investigando.'); return; }
+  if(state.troopLevels[i]>=12){ log('Esta tropa ya está al nivel máximo 12.'); return; }
+  const cost=180*state.troopLevels[i];
+  if(state.player.elixir<cost){ log('No tienes elixir suficiente para investigar.'); return; }
+  state.player.elixir-=cost; updateStats();
+  state.research={troop:i,end:Date.now()+8000}; updateSelectionPanel();
+  log(`Investigación iniciada para ${troops[i].name}.`);
+}
+function moveSelectedBuildingTo(x,z){
+  const b=state.selectedBuilding; if(!b) return;
+  const occupied=[...state.village,...state.enemies].some(v=>v!==b && Math.hypot(v.x-x,v.z-z)<1.0);
+  if(occupied){ log('No puedes moverlo ahí: la casilla está ocupada.'); return; }
+  b.x=x; b.z=z; b.mesh.position.set(x,0,z); state.moveMode=false;
+  if(state.selectionHelper) state.selectionHelper.update();
+  modeLabel.textContent='Modo Construcción'; subLabel.textContent='Haz clic en el terreno para colocar edificios';
+  updateSelectionPanel(); refreshLists();
+  log(`${buildTypes[b.type]?.label || b.type} movido a ${x.toFixed(1)}, ${z.toFixed(1)}.`);
+}
+
+function placeBuilding(x,z){
+  const type = state.buildSelected; const def = buildTypes[type];
+  if(!def) return;
+  const count = state.village.filter(v=>v.type===type).length;
+  if(count>=def.max) return log(`Límite alcanzado de ${def.label}.`);
+  if(state.player.th < def.thReq) return log(`Necesitas Ayuntamiento ${def.thReq}.`);
+  if(state.player.gold < def.costGold || state.player.elixir < def.costElixir) return log('No tienes recursos suficientes.');
+  const occupied = [...state.village, ...state.enemies].some(v => Math.hypot(v.x-x, v.z-z) < 1.0);
+  if(occupied) return log('Esa casilla está ocupada.');
+  state.player.gold -= def.costGold; state.player.elixir -= def.costElixir;
+  addVillageBuilding(type,x,z,1,false);
+  updateStats(); renderBuildUI(); log(`${def.label} colocado en ${x.toFixed(1)}, ${z.toFixed(1)}.`);
+}
+
+function createUnit(x,z,troopIndex){
+  const t = troops[troopIndex];
+  if((state.armyCounts[troopIndex]||0)<=0) return log(`No te quedan ${t.name}s. Entrena más en el Cuartel.`);
+  state.armyCounts[troopIndex]--; renderTroopUI(); selectedTroopText.textContent=`Tropa ${troopIndex+1}: ${t.name} · x${state.armyCounts[troopIndex]||0}`;
+  const troopLevel=state.troopLevels[troopIndex]||1;
+  const scaled={...t,hp:Math.round(t.hp*(1+(troopLevel-1)*.08)),damage:Math.round(t.damage*(1+(troopLevel-1)*.08))};
+  const group=makeTroopModel(troopIndex);
+  const bar=hpBar(scaled.hp,scaled.hp,0x5cc8ff); bar.position.y=troopIndex===2?1.72:troopIndex===4?1.58:1.28; group.add(bar);
+  group.position.set(x,.05,z); scene.add(group);
+  const unit={mesh:group,bar,...scaled,maxHp:scaled.hp,hp:scaled.hp,alive:true,x,z,target:null,attackCooldown:0,moving:false,attackAnimating:false,troopIndex};
+  state.units.push(unit);
+  log(`${t.name} desplegado en 3D.`);
+}
+
+function aliveUnits(){ return state.units.filter(u=>u.alive && u.hp>0); }
+function isDefense(b){ return b.type==='cannon' || b.type==='archer'; }
+function defenseStats(b){
+  if(b.type==='archer') return {range:7.2, damage:8+b.level*2, cooldown:1.05, color:0xffd36b};
+  return {range:5.3, damage:13+b.level*3, cooldown:1.45, color:0xff8b5e};
+}
+function spawnProjectile(defense, unit, stats){
+  if(!unit || !unit.alive) return;
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(defense.type==='cannon'?0.11:0.07,8,8), new THREE.MeshBasicMaterial({color:stats.color}));
+  mesh.position.set(defense.x, defense.type==='archer'?1.45:0.75, defense.z);
+  scene.add(mesh);
+  state.projectiles.push({mesh, target:unit, damage:stats.damage, speed:defense.type==='cannon'?0.15:0.22});
+}
+function damageUnit(unit, amount){
+  if(!unit?.alive) return;
+  unit.hp=Math.max(0,unit.hp-amount); updateHpBar(unit.bar,unit.hp);
+  unit.mesh.userData.anim && (unit.mesh.userData.anim.hit=1);
+  if(unit.hp<=0){
+    unit.alive=false; unit.moving=false; unit.attackAnimating=false;
+    unit.mesh.traverse(o=>{if(o.isMesh && o.material?.color){o.material=o.material.clone();o.material.color.multiplyScalar(.55)}});
+    log(`${unit.name} ha caído en combate.`);
+    setTimeout(()=>{ if(unit.mesh.parent) scene.remove(unit.mesh); },1400);
+  }
+}
+
+function attackProgress(){
+  const totalHp = Math.max(1,state.initialEnemyHp || state.enemies.reduce((s,e)=>s+e.maxHp,0));
+  const remaining = state.enemies.reduce((s,e)=>s+Math.max(0,e.hp),0);
+  const percent = Math.max(0,Math.min(100,Math.round((1-remaining/totalHp)*100)));
+  const thDestroyed = state.enemies.some(e=>e.type==='townhall' && e.hp<=0);
+  let stars = 0;
+  if(percent>=50) stars++;
+  if(thDestroyed) stars++;
+  if(percent>=100) stars=3;
+  return {percent,stars,thDestroyed};
+}
+function starText(n){ return '★'.repeat(n)+'☆'.repeat(3-n); }
+function updateBattleHud(){
+  const p=attackProgress();
+  const elapsed=Date.now()-state.battleStart;
+  const left=Math.max(0,state.battleDuration-elapsed);
+  const sec=Math.ceil(left/1000), mm=Math.floor(sec/60), ss=String(sec%60).padStart(2,'0');
+  ui.battleTimer.textContent=`${mm}:${ss}`;
+  ui.battlePercent.textContent=`${p.percent}%`;
+  ui.battleStars.textContent=starText(p.stars);
+  ui.attackObjective.textContent=`${p.percent}% · ${starText(p.stars)}`;
+  if(state.attackActive && left<=0) finishBattle('Se acabó el tiempo.');
+  if(state.attackActive && p.percent>=100) finishBattle('Has destruido toda la aldea enemiga.');
+}
+function startBattle(){
+  state.mode='attack'; state.attackActive=true; state.attackPaused=false; state.battleFinished=false; state.battleStart=Date.now();
+  state.initialEnemyCount=state.enemies.length; state.initialEnemyHp=state.enemies.reduce((s,e)=>s+e.maxHp,0);
+  state.enemies.forEach(e=>e.defenseCooldown=Math.random());
+  ui.battleHud.classList.remove('hidden'); ui.finishOverlay.classList.add('hidden');
+  ui.pauseBattleBtn.disabled=false; ui.pauseBattleBtn.textContent='⏸ Pausar'; ui.startBattleBtn.disabled=true;
+  attackModeBtn.classList.add('active','primary'); buildModeBtn.classList.remove('active','primary');
+  attackState.textContent='En batalla'; modeLabel.textContent='Ataque 3D en curso'; subLabel.textContent='Elige una unidad 1–5 y despliega desde el borde';
+  log('⚔ Ataque iniciado. Las defensas enemigas ya están activas.'); updateBattleHud();
+}
+function finishBattle(reason){
+  if(state.battleFinished) return;
+  state.attackActive=false; state.attackPaused=false; state.battleFinished=true; ui.pauseBattleBtn.disabled=true; ui.startBattleBtn.disabled=false;
+  const p=attackProgress(); ui.finishStars.textContent=starText(p.stars); ui.finishPercent.textContent=`${p.percent}% destruido`; ui.finishText.textContent=reason;
+  ui.finishOverlay.classList.remove('hidden'); attackState.textContent='Finalizado';
+  log(`Ataque terminado: ${p.percent}% · ${p.stars} estrella(s).`);
+}
+function resetEnemyVillage(){
+  state.units.forEach(u=>{if(u.mesh.parent)scene.remove(u.mesh)}); state.units=[];
+  state.projectiles.forEach(p=>{if(p.mesh.parent)scene.remove(p.mesh)}); state.projectiles=[];
+  state.troopProjectiles.forEach(p=>{if(p.mesh.parent)scene.remove(p.mesh)}); state.troopProjectiles=[];
+  state.fx.forEach(f=>{if(f.mesh.parent)scene.remove(f.mesh)}); state.fx=[];
+  state.enemies.forEach(e=>{if(e.mesh.parent)scene.remove(e.mesh)}); state.enemies=[];
+  addVillageBuilding('townhall', 4.3, -0.6, 2, true);
+  addVillageBuilding('goldmine', 6.5, 1.9, 2, true);
+  addVillageBuilding('elixir', 3.0, 2.2, 2, true);
+  addVillageBuilding('cannon', 2.0, -2.3, 2, true);
+  addVillageBuilding('archer', 6.5, -2.2, 2, true);
+  [2.6,3.4,4.2,5.0,5.8].forEach(x=>addVillageBuilding('wall',x,3.3,2,true));
+  [2.6,3.4,4.2,5.0,5.8].forEach(x=>addVillageBuilding('wall',x,-3.3,2,true));
+  state.armyCounts=[18,14,7,6,1]; renderTroopUI();
+  state.attackActive=false; state.battleFinished=false; state.attackPaused=false; ui.battleHud.classList.add('hidden'); ui.finishOverlay.classList.add('hidden');
+  ui.startBattleBtn.disabled=false; ui.pauseBattleBtn.disabled=true; attackState.textContent='Preparando'; refreshLists(); log('Aldea enemiga y ejército reiniciados.');
+}
+ui.startBattleBtn.onclick=startBattle;
+ui.pauseBattleBtn.onclick=()=>{ if(!state.attackActive)return; state.attackPaused=!state.attackPaused; ui.pauseBattleBtn.textContent=state.attackPaused?'▶ Continuar':'⏸ Pausar'; attackState.textContent=state.attackPaused?'Pausado':'En batalla'; };
+ui.resetBattleBtn.onclick=resetEnemyVillage;
+ui.closeResultBtn.onclick=()=>{ ui.finishOverlay.classList.add('hidden'); resetEnemyVillage(); state.mode='attack'; attackModeBtn.classList.add('active','primary'); buildModeBtn.classList.remove('active','primary'); modeLabel.textContent='Modo Ataque'; subLabel.textContent='Pulsa “Iniciar ataque 3D” para comenzar'; };
+
+function nearestEnemy(unit){
+  const alive = state.enemies.filter(e=>e.hp>0);
+  if(!alive.length) return null;
+  alive.sort((a,b)=>Math.hypot(a.x-unit.mesh.position.x,a.z-unit.mesh.position.z)-Math.hypot(b.x-unit.mesh.position.x,b.z-unit.mesh.position.z));
+  return alive[0];
+}
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+sceneWrap.addEventListener('click', (ev)=>{
+  if(ev.target.closest && ev.target.closest('.selection-panel')) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  if(state.mode==='build' && state.moveMode && state.selectedBuilding){
+    const moveHit = raycaster.intersectObject(ground)[0];
+    if(moveHit){ const mx=Math.round(moveHit.point.x*2)/2, mz=Math.round(moveHit.point.z*2)/2; moveSelectedBuildingTo(mx,mz); }
+    return;
+  }
+
+  if(state.mode==='build'){
+    const buildingObjects = state.village.flatMap(v=>v.mesh.children.length ? [v.mesh, ...v.mesh.children] : [v.mesh]);
+    const buildingHit = raycaster.intersectObjects(buildingObjects, true)[0];
+    if(buildingHit){
+      let obj = buildingHit.object;
+      while(obj && !obj.userData.buildingEntry) obj = obj.parent;
+      const entry = obj?.userData?.buildingEntry || buildingHit.object.userData.buildingEntry;
+      if(entry){ selectBuilding(entry); return; }
+    }
+  }
+
+  const hit = raycaster.intersectObject(ground)[0];
+  if(!hit) return;
+  const x = Math.round(hit.point.x*2)/2; const z = Math.round(hit.point.z*2)/2;
+  if(state.mode==='build'){
+    clearBuildingSelection();
+    placeBuilding(x,z);
+  } else {
+    if(!state.attackActive) return log('Pulsa “Iniciar ataque 3D” antes de desplegar tropas.');
+    if(state.attackPaused) return log('La batalla está pausada.');
+    const edge = Math.abs(x)>11 || Math.abs(z)>11 || x < -8;
+    if(!edge) return log('En ataque, despliega tropas cerca del borde del mapa.');
+    createUnit(x,z,state.troopSelected);
+  }
+});
+
+buildModeBtn.onclick = ()=>{
+  if(state.attackActive){ log('Termina o reinicia el ataque antes de volver a construir.'); return; }
+  state.mode='build'; buildModeBtn.classList.add('active','primary'); attackModeBtn.classList.remove('active','primary');
+  clearBuildingSelection();
+  modeLabel.textContent='Modo Construcción'; subLabel.textContent='Haz clic en el terreno para colocar edificios'; attackState.textContent='Preparando';
+};
+attackModeBtn.onclick = ()=>{
+  state.mode='attack'; attackModeBtn.classList.add('active','primary'); buildModeBtn.classList.remove('active','primary');
+  clearBuildingSelection();
+  modeLabel.textContent='Modo Ataque'; subLabel.textContent=state.attackActive?'Elige unidad 1–5 y despliega desde el borde':'Pulsa “Iniciar ataque 3D” para comenzar'; attackState.textContent=state.attackActive?'En batalla':'Preparando';
+};
+
+function resize(){
+  const r = sceneWrap.getBoundingClientRect();
+  camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); renderer.setSize(r.width, r.height, false);
+}
+window.addEventListener('resize', resize); resize();
+
+let t = 0;
+function animate(){
+  requestAnimationFrame(animate); t += 0.016;
+  if(state.selectionHelper) state.selectionHelper.update();
+  const nowMs=Date.now();
+  for(const b of state.village){
+    if(b.type==='goldmine'||b.type==='elixir'){
+      const dt=Math.max(0,(nowMs-(b.lastTick||nowMs))/1000);
+      const rate=(5+b.level*2)/60;
+      b.stored=Math.min(b.capacity||250*b.level,(b.stored||0)+rate*dt);
+      b.lastTick=nowMs;
+    }
+  }
+  if(state.training && nowMs>=state.training.end){
+    const i=state.training.troop; state.armyCounts[i]=(state.armyCounts[i]||0)+1; state.training=null; renderTroopUI(); if(state.selectedBuilding?.type==='barracks') updateSelectionPanel(); log(`${troops[i].name} listo para el ejército.`);
+  }
+  if(state.research && nowMs>=state.research.end){
+    const i=state.research.troop; state.troopLevels[i]=Math.min(12,(state.troopLevels[i]||1)+1); state.research=null; renderTroopUI(); if(state.selectedBuilding?.type==='laboratory') updateSelectionPanel(); log(`${troops[i].name} mejorado a nivel ${state.troopLevels[i]}.`);
+  }
+  if(state.selectedBuilding && Math.floor(t*4)%2===0) updateSelectionPanel();
+  if(state.attackActive) updateBattleHud();
+  if(state.attackActive && !state.attackPaused){
+    for(const d of state.enemies.filter(e=>e.hp>0 && isDefense(e))){
+      d.defenseCooldown=(d.defenseCooldown||0)-0.016;
+      const stats=defenseStats(d);
+      const targets=aliveUnits().map(u=>({u,dist:Math.hypot(d.x-u.mesh.position.x,d.z-u.mesh.position.z)})).filter(x=>x.dist<=stats.range).sort((a,b)=>a.dist-b.dist);
+      if(d.defenseCooldown<=0 && targets.length){ spawnProjectile(d,targets[0].u,stats); d.defenseCooldown=stats.cooldown; }
+    }
+    for(let i=state.projectiles.length-1;i>=0;i--){
+      const p=state.projectiles[i];
+      if(!p.target?.alive){ if(p.mesh.parent)scene.remove(p.mesh); state.projectiles.splice(i,1); continue; }
+      const targetPos=p.target.mesh.position.clone(); targetPos.y+=p.target.size*1.1;
+      const dir=targetPos.clone().sub(p.mesh.position); const dist=dir.length();
+      if(dist<0.28){ damageUnit(p.target,p.damage); if(p.mesh.parent)scene.remove(p.mesh); state.projectiles.splice(i,1); }
+      else p.mesh.position.add(dir.normalize().multiplyScalar(p.speed));
+    }
+  }
+  for(const u of state.units){
+    animateTroopVisual(u,.016,t);
+    if(!u.alive) continue;
+    if(state.attackPaused || !state.attackActive){ u.moving=false; continue; }
+    if(!u.target || u.target.hp<=0) u.target=nearestEnemy(u);
+    if(!u.target){ u.moving=false; continue; }
+    const tp=new THREE.Vector3(u.target.x,u.mesh.position.y,u.target.z);
+    const pos=u.mesh.position;
+    const dx=tp.x-pos.x,dz=tp.z-pos.z;
+    const dist=Math.hypot(dx,dz);
+    u.mesh.rotation.y=Math.atan2(dx,dz);
+    const range=u.attackRange||.8;
+    if(dist>range){
+      u.moving=true;
+      pos.x+=(dx/dist)*u.speed; pos.z+=(dz/dist)*u.speed;
+    }else{
+      u.moving=false;
+      if(u.attackCooldown<=0){
+        u.attackAnimating=true;
+        if(u.attackStyle==='arrow' || u.attackStyle==='magic'){
+          spawnTroopProjectile(u,u.target,u.attackStyle);
+          log(`${u.name} dispara contra ${buildTypes[u.target.type]?.label || u.target.type}.`);
+        }else{
+          damageBuilding(u.target,u.damage);
+          log(`${u.name} golpea ${buildTypes[u.target.type]?.label || u.target.type} por ${u.damage}.`);
+        }
+        u.attackCooldown=u.troopIndex===2?1.05:u.troopIndex===4?.8:.72;
+      }
+    }
+    u.attackCooldown-=.016;
+  }
+
+  for(let i=state.troopProjectiles.length-1;i>=0;i--){
+    const p=state.troopProjectiles[i];
+    if(!p.target || p.target.hp<=0){ if(p.mesh.parent)scene.remove(p.mesh); state.troopProjectiles.splice(i,1); continue; }
+    const targetPos=new THREE.Vector3(p.target.x,.62,p.target.z);
+    const dir=targetPos.clone().sub(p.mesh.position); const dist=dir.length();
+    if(dist<.22){
+      damageBuilding(p.target,p.damage);
+      if(p.mesh.parent)scene.remove(p.mesh); state.troopProjectiles.splice(i,1);
+    }else{
+      const v=dir.normalize().multiplyScalar(p.speed); p.mesh.position.add(v);
+      if(p.style==='arrow') p.mesh.lookAt(targetPos);
+    }
+  }
+
+  for(let i=state.fx.length-1;i>=0;i--){
+    const f=state.fx[i]; f.life-=.016; f.vel.y-=.0015; f.mesh.position.add(f.vel); f.mesh.rotation.x+=.08; f.mesh.rotation.z+=.05;
+    if(f.life<=0){ if(f.mesh.parent)scene.remove(f.mesh); state.fx.splice(i,1); }
+  }
+  if(state.attackActive && !state.attackPaused){
+    const reserve=state.armyCounts.reduce((s,n)=>s+n,0);
+    if(aliveUnits().length===0 && reserve===0) finishBattle('Ya no te quedan tropas disponibles.');
+  }
+  renderer.render(scene,camera);
+}
+animate();
+
+async function boot(){
+  try{
+    await preloadAllGLBModels();
+    log('Modelos GLB inventados cargados.');
+  }catch(err){
+    console.warn(err);
+    log('No se pudieron cargar todos los GLB. Se usarán modelos de reserva.');
+  }
+  if(state.village.length===0 && state.enemies.length===0){
+    seedWorld();
+  }
+  refreshLists();
+  selectedTroopText.textContent = `Tropa 1: ${troops[0].name} · x${state.armyCounts[0]}`;
+  log('Ahora la demo usa archivos .glb locales para probar el sistema.');
+}
+boot();
+
+selectedTroopText.textContent = `Tropa 1: ${troops[0].name} · x${state.armyCounts[0]}`;
+log('FASE 3: tropas 3D articuladas y animaciones activadas.');
+log('Arquera y Mago atacan a distancia; Bárbaro, Gigante y Rey atacan cuerpo a cuerpo.');
+</script>
+</body>
+</html>
